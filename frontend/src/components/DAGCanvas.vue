@@ -5,12 +5,9 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, nextTick } from 'vue'
 import { useDAGStore } from '../store/dag'
+import { getNodeResultDef, retryText } from '../constants/executionResults'
 const store = useDAGStore()
 const cvs = ref<HTMLCanvasElement>()
-
-const STATUS_COLORS: Record<string, string> = {
-  PENDING: '#4a5568', RUNNING: '#3182ce', SUCCESS: '#38a169', FAILED: '#e53e3e', TIMEOUT: '#d69e2e'
-}
 
 function draw() {
   const c = cvs.value!; c.width = c.clientWidth; c.height = c.clientHeight
@@ -49,10 +46,11 @@ function draw() {
   // Draw nodes
   nodes.forEach(n => {
     const {x, y} = nodePos[n.id]
-    const color = STATUS_COLORS[n.status] || '#4a5568'
+    const result = getNodeResultDef(n.status)
+    const color = result.color
 
     // Glow for running
-    if (n.status === 'RUNNING') {
+    if (result.glow) {
       ctx.shadowColor = color; ctx.shadowBlur = 15
     }
 
@@ -70,7 +68,7 @@ function draw() {
     ctx.fillStyle = '#e0e0e0'; ctx.font = 'bold 11px system-ui'; ctx.textAlign = 'center'
     ctx.fillText(n.name, x, y - 2)
     ctx.fillStyle = '#888'; ctx.font = '9px monospace'
-    ctx.fillText(`${n.status} | 重试${n.retries}`, x, y + 14)
+    ctx.fillText(`${n.status} | ${retryText(n.retries)}`, x, y + 14)
     ctx.textAlign = 'start'
 
     // Duration
